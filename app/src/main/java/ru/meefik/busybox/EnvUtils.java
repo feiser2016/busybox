@@ -19,13 +19,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * Created by anton on 19.09.15.
- */
 class EnvUtils {
 
     /**
@@ -170,7 +166,7 @@ class EnvUtils {
      * @return false if error
      */
     private static Boolean isLatestVersion(Context c) {
-        Boolean result = false;
+        boolean result = false;
         String f = PrefStore.getEnvDir(c) + "/version";
         BufferedReader br = null;
         try {
@@ -208,22 +204,38 @@ class EnvUtils {
             return false;
         }
         String mArch = PrefStore.getArch();
-        if (PrefStore.STATIC_VERSION) {
-            if (!extractDir(c, mArch + "/static", "")) {
-                return false;
-            }
-        } else {
-            // PIE for Android L+
-            if (android.os.Build.VERSION.SDK_INT >= 21) {
-                if (!extractDir(c, mArch + "/pie", "")) {
+        switch (mArch) {
+            case "arm":
+                if (!extractDir(c, "arm", "")) {
                     return false;
                 }
-            } else {
-                if (!extractDir(c, mArch + "/nopie", "")) {
+                break;
+            case "arm64":
+                if (!extractDir(c, "arm", "")) {
                     return false;
                 }
-            }
+                if (!extractDir(c, "arm64", "")) {
+                    return false;
+                }
+                break;
+            case "x86":
+                if (!extractDir(c, "x86", "")) {
+                    return false;
+                }
+                break;
+            case "x86_64":
+                if (!extractDir(c, "x86", "")) {
+                    return false;
+                }
+                if (!extractDir(c,  "x86_64", "")) {
+                    return false;
+                }
+                break;
         }
+
+        // set executable app directory
+        File appDir = new File(PrefStore.getEnvDir(c) + "/..");
+        appDir.setExecutable(true, false);
 
         // set permissions
         setPermissions(fEnvDir);

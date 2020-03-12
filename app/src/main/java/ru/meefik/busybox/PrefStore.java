@@ -10,12 +10,8 @@ import android.os.Environment;
 import java.io.File;
 import java.util.Locale;
 
-/**
- * Created by anton on 18.09.15.
- */
 class PrefStore {
 
-    static final boolean STATIC_VERSION = true;
     static final String APP_PREF_NAME = "app_settings";
     private static final String LOG_FILE = "busybox.log";
 
@@ -70,25 +66,25 @@ class PrefStore {
         }
         Locale locale;
         switch (language.toLowerCase()) {
-                case "be":
-                case "de":
-                case "es":
-                case "fr":
-                case "ko":
-                case "pl":
-                case "ru":
-                case "uk":
-                    locale = new Locale(language);
-                    break;
-                case "zh_cn":
-                    locale = Locale.SIMPLIFIED_CHINESE;
-                    break;
-                case "zh_tw":
-                    locale = Locale.TRADITIONAL_CHINESE;
-                    break;
-                default:
-                    language = "en";
-                    locale = Locale.ENGLISH;
+            case "be":
+            case "de":
+            case "es":
+            case "fr":
+            case "ko":
+            case "pl":
+            case "ru":
+            case "uk":
+                locale = new Locale(language);
+                break;
+            case "zh_cn":
+                locale = Locale.SIMPLIFIED_CHINESE;
+                break;
+            case "zh_tw":
+                locale = Locale.TRADITIONAL_CHINESE;
+                break;
+            default:
+                language = "en";
+                locale = Locale.ENGLISH;
         }
         if (emptyLang) {
             SharedPreferences.Editor editor = pref.edit();
@@ -126,7 +122,7 @@ class PrefStore {
      * @return font size
      */
     static int getFontSize(Context c) {
-        Integer fontSizeInt;
+        int fontSizeInt;
         SharedPreferences pref = c.getSharedPreferences(APP_PREF_NAME, Context.MODE_PRIVATE);
         String fontSize = pref.getString("fontsize", c.getString(R.string.fontsize));
         try {
@@ -148,7 +144,7 @@ class PrefStore {
      * @return number of lines
      */
     static int getMaxLines(Context c) {
-        Integer maxLinesInt;
+        int maxLinesInt;
         SharedPreferences pref = c.getSharedPreferences(APP_PREF_NAME, Context.MODE_PRIVATE);
         String maxLines = pref.getString("maxlines", c.getString(R.string.maxlines));
         try {
@@ -217,11 +213,8 @@ class PrefStore {
     static String getLogFile(Context c) {
         SharedPreferences pref = c.getSharedPreferences(APP_PREF_NAME, Context.MODE_PRIVATE);
         String logFile = pref.getString("logfile", c.getString(R.string.logfile));
-        if (logFile.length() == 0) {
-            logFile = getStorage() + File.separator + LOG_FILE;
-            SharedPreferences.Editor editor = pref.edit();
-            editor.putString("logfile", logFile);
-            editor.apply();
+        if (!logFile.contains("/")) {
+            logFile = getStorage() + "/" + LOG_FILE;
         }
         return logFile;
     }
@@ -230,7 +223,7 @@ class PrefStore {
      * Get hardware architecture
      *
      * @param arch unformated architecture
-     * @return x86, arm or mips
+     * @return arm, arm_64, x86, x86_64
      */
     private static String getArch(String arch) {
         String march = "unknown";
@@ -238,17 +231,18 @@ class PrefStore {
             char a = arch.toLowerCase().charAt(0);
             switch (a) {
                 case 'a':
-                    if (arch.equals("amd64"))
-                        march = "x86";
-                    else
-                        march = "arm";
-                    break;
-                case 'm':
-                    march = "mips";
+                    if (arch.equals("amd64")) march = "x86_64";
+                    else if (arch.contains("64")) march = "arm64";
+                    else march = "arm";
                     break;
                 case 'i':
                 case 'x':
-                    march = "x86";
+                    if (arch.contains("64")) march = "x86_64";
+                    else march = "x86";
+                    break;
+                case 'm':
+                    if (arch.contains("64")) march = "mips64";
+                    else march = "mips";
                     break;
             }
         }
@@ -258,7 +252,7 @@ class PrefStore {
     /**
      * Get current hardware architecture
      *
-     * @return x86, arm or mips
+     * @return arm, arm_64, x86, x86_64
      */
     static String getArch() {
         return getArch(System.getProperty("os.arch"));
@@ -295,6 +289,17 @@ class PrefStore {
     static boolean isReplaceApplets(Context c) {
         SharedPreferences pref = c.getSharedPreferences(APP_PREF_NAME, Context.MODE_PRIVATE);
         return pref.getBoolean("replace", c.getString(R.string.replace).equals("true"));
+    }
+
+    /**
+     * Mount as RAM disk
+     *
+     * @param c context
+     * @return true, if ram disk
+     */
+    static boolean isRamDisk(Context c) {
+        SharedPreferences pref = c.getSharedPreferences(APP_PREF_NAME, Context.MODE_PRIVATE);
+        return pref.getBoolean("ramdisk", c.getString(R.string.ramdisk).equals("true"));
     }
 
     /**
